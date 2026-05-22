@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../controllers/scanner_controller.dart';
-import '../controllers/api_controller.dart'; // Import API Controller
-import 'food_result_view.dart'; // Import Result View
+import '../controllers/api_controller.dart';
+import 'food_result_view.dart';
 
 class HomeScannerView extends StatefulWidget {
   const HomeScannerView({super.key});
@@ -13,11 +13,11 @@ class HomeScannerView extends StatefulWidget {
 
 class _HomeScannerViewState extends State<HomeScannerView> {
   final ScannerController _scannerController = ScannerController();
-  final ApiController _apiController = ApiController(); // Instantiate network channel
+  final ApiController _apiController = ApiController();
+  final TextEditingController _detailsController = TextEditingController(); // Controller untuk kolom detail
   File? _displayImage;
   bool _isAnalyzing = false;
 
-  /// Handles camera initialization stream inside the view context
   Future<void> _handleCameraCapture() async {
     final image = await _scannerController.captureImageFromCamera();
     if (image != null) {
@@ -25,7 +25,6 @@ class _HomeScannerViewState extends State<HomeScannerView> {
     }
   }
 
-  /// Handles local gallery asset fetching stream
   Future<void> _handleGalleryImport() async {
     final image = await _scannerController.importImageFromGallery();
     if (image != null) {
@@ -33,18 +32,19 @@ class _HomeScannerViewState extends State<HomeScannerView> {
     }
   }
 
-  /// Executes image dispatch transactions to the network processing layer
   Future<void> _executeFoodAnalysis() async {
     if (_displayImage == null) return;
     setState(() => _isAnalyzing = true);
     
-    // Fire image payload to cloud compute pipeline
-    final resultModel = await _apiController.uploadAndAnalyzeFoodImage(_displayImage!);
+    // Mengirimkan file gambar DAN teks catatan porsi dari user
+    final resultModel = await _apiController.uploadAndAnalyzeFoodImage(
+      _displayImage!, 
+      _detailsController.text,
+    );
     
     setState(() => _isAnalyzing = false);
 
     if (resultModel != null && mounted) {
-      // Transition navigation stack matrix smoothly to the results interface dashboard
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -53,8 +53,17 @@ class _HomeScannerViewState extends State<HomeScannerView> {
             foodData: resultModel,
           ),
         ),
-      );
+      ).then((_) {
+        // Opsional: bersihkan input setelah kembali ke dashboard
+        _detailsController.clear();
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    _detailsController.dispose();
+    super.dispose();
   }
 
   @override
@@ -68,17 +77,18 @@ class _HomeScannerViewState extends State<HomeScannerView> {
         elevation: 2,
         centerTitle: true,
       ),
-      body: Padding(
+      body: SingleChildScrollView( // Diubah ke scrollview biar pas ngetik keyboard gak overflow eror!
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // High-Fidelity Visual Feed Container Panel
-            Expanded(
-              child: Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                clipBehavior: Clip.antiAlias,
+            // Container Panel Visual Foto Makanan
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                height: 300, // Fixed height agar layout tetap seimbang
                 child: _displayImage != null
                     ? Image.file(_displayImage!, fit: BoxFit.cover)
                     : Container(
@@ -100,7 +110,35 @@ class _HomeScannerViewState extends State<HomeScannerView> {
             ),
             const SizedBox(height: 16),
 
-            // Dynamic Functional Capture Control Matrix Panel
+            // 🌟 INDIKATOR KECERDASAN UX: Kolom Input Detail Porsi Tambahan
+            if (_displayImage != null) ...[
+              const Text(
+                'Additional Portion Specifications (Optional)',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _detailsController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'e.g., siomay ikan 3, kol kukus 2, kentang 1, bumbu kacang terpisah',
+                  hintStyle: const TextStyle(fontSize: 13, color: Colors.black38),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.orange[200]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.orange, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Tombol Kontrol Kamera dan Galeri
             Row(
               children: [
                 Expanded(
@@ -132,13 +170,13 @@ class _HomeScannerViewState extends State<HomeScannerView> {
             ),
             const SizedBox(height: 12),
 
-            // Strategic Execution AI Pipeline Action Button
+            // Tombol Analisis AI Utama
             ElevatedButton.icon(
               onPressed: _displayImage == null || _isAnalyzing ? null : _executeFoodAnalysis,
               icon: _isAnalyzing
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.analytics),
-              label: Text(_isAnalyzing ? 'Analyzing Nutritional Metrics...' : 'Execute AI Diagnosis Session'),
+              label: Text(_isAnalyzing ? 'Analyzing Hybrid Metrics...' : 'Execute AI Diagnosis Session'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey[900],
                 foregroundColor: Colors.white,
