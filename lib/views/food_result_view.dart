@@ -14,6 +14,13 @@ class FoodResultView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Memisahkan catatan user agar tidak ikut looping di dalam list makronutrisi
+    final macroEntries = foodData.macronutrients.entries
+        .where((entry) => entry.key != 'User Note Matrix')
+        .toList();
+        
+    final String? userNote = foodData.macronutrients['User Note Matrix'];
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -40,7 +47,7 @@ class FoodResultView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Main Identification Header Card
+            // Main Identification Header Card (Menggunakan Wrap agar BEBAS OVERFLOW)
             Card(
               elevation: 1,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -51,22 +58,26 @@ class FoodResultView extends StatelessWidget {
                   children: [
                     Text(
                       foodData.foodName,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    // Mengganti Row menjadi Wrap agar otomatis turun ke bawah jika layar sempit
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 4.0,
                       children: [
                         Chip(
-                          avatar: const Icon(Icons.verified, size: 16, color: Colors.green),
-                          label: Text(foodData.accuracyStatus, style: const TextStyle(fontSize: 12)),
+                          avatar: const Icon(Icons.verified, size: 14, color: Colors.green),
+                          label: Text(foodData.accuracyStatus, style: const TextStyle(fontSize: 11)),
                           backgroundColor: Colors.green[50],
                           side: BorderSide.none,
+                          visualDensity: VisualDensity.compact,
                         ),
-                        const SizedBox(width: 8),
                         Chip(
-                          label: Text('Confidence: ${foodData.confidenceScore}%', style: const TextStyle(fontSize: 12)),
+                          label: Text('Confidence: ${foodData.confidenceScore}%', style: const TextStyle(fontSize: 11)),
                           backgroundColor: Colors.orange[50],
                           side: BorderSide.none,
+                          visualDensity: VisualDensity.compact,
                         ),
                       ],
                     ),
@@ -85,7 +96,7 @@ class FoodResultView extends StatelessWidget {
                 side: const BorderSide(color: Colors.orangeAccent, width: 1),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -102,7 +113,7 @@ class FoodResultView extends StatelessWidget {
                       children: [
                         Text(
                           '${foodData.calories.toInt()}',
-                          style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.orange[900]),
+                          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.orange[900]),
                         ),
                         const SizedBox(width: 4),
                         Text('Kcal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[900])),
@@ -114,19 +125,19 @@ class FoodResultView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Macronutrient Matrix Metrics Breakdown
+            // Macronutrient Distribution Matrix Metrics Breakdown
             const Text(
               'Macronutrient Distribution Framework',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54),
             ),
             const SizedBox(height: 8),
             Card(
               elevation: 1,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
                 child: Column(
-                  children: foodData.macronutrients.entries.map((entry) {
+                  children: macroEntries.map((entry) {
                     IconData macroIcon = Icons.fitness_center;
                     Color iconColor = Colors.grey;
                     
@@ -137,18 +148,54 @@ class FoodResultView extends StatelessWidget {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: iconColor.withOpacity(0.1),
-                        child: Icon(macroIcon, color: iconColor, size: 20),
+                        child: Icon(macroIcon, color: iconColor, size: 18),
                       ),
-                      title: Text(entry.key, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      title: Text(entry.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                       trailing: Text(
                         entry.value,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
                       ),
                     );
                   }).toList(),
                 ),
               ),
             ),
+            
+            // 🌟 PANEL BARU: Menampilkan Catatan Kustom Secara Horizontal Luas
+            if (userNote != null && userNote.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'User Verification Specifications',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                color: Colors.grey[100],
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(14.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.assignment, color: Colors.grey[600], size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          userNote,
+                          style: const TextStyle(
+                            fontSize: 13, 
+                            fontWeight: FontWeight.w500, 
+                            color: Colors.black87,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
